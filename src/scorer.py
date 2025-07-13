@@ -1,7 +1,8 @@
 # src/scorer.py
 from typing import Dict, List, Optional, Tuple
 import pandas as pd
-from .prediction_modules.base_predictor import SicBoOutcome
+# *** แก้ไข: เปลี่ยน Relative Import เป็น Absolute Import ***
+from prediction_modules.base_predictor import SicBoOutcome
 
 class ConfidenceScorer:
     def score(self, 
