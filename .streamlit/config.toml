@@ -1,0 +1,8 @@
+# .streamlit/config.toml
+[theme]
+base="dark"
+primaryColor="#FFD700" # Gold
+backgroundColor="#1a1a1a" # Dark background
+secondaryBackgroundColor="#2a2a2a" # Slightly lighter dark
+textColor="#FAFAFA" # White/light grey text
+font="sans serif" # Default font (Sarabun will be loaded via CSS)
