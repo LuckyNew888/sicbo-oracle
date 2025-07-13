@@ -1,7 +1,8 @@
 # src/prediction_modules/sniper_pattern_predictor.py
 import pandas as pd
 from typing import List, Optional
-from .base_predictor import BasePredictor, SicBoOutcome
+# *** แก้ไข: เปลี่ยน Relative Import เป็น Absolute Import ***
+from prediction_modules.base_predictor import BasePredictor, SicBoOutcome
 
 class SniperPatternPredictor(BasePredictor):
     def __init__(self):
