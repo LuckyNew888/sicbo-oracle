@@ -1,6 +1,82 @@
 # src/scorer.py
 from typing import Dict, List, Optional, Tuple
 import pandas as pd
+from prediction_modules.base_predictor import SicBoOutcome
+
+class ConfidenceScorer:
+    def score(self, 
+              predictions: Dict[str, Optional[SicBoOutcome]], 
+              weights: Dict[str, float], 
+              history: pd.DataFrame) -> Tuple[Optional[SicBoOutcome], Optional[str], Optional[int], Optional[str]]:
+        """
+        Aggregates predictions from multiple modules, applies weights, and determines the best prediction.
+        Now includes 'ไฮโล' in the scoring aggregation.
+        """
+        
+        # Initialize scores for main outcomes: High, Low, and HiLo
+        total_score = {"สูง": 0.0, "ต่ำ": 0.0, "ไฮโล": 0.0}
+
+        for name, pred in predictions.items():
+            if pred is None:
+                continue
+            
+            weight = weights.get(name, 0.5)
+
+            # Aggregate scores based on prediction type
+            if pred in total_score: # Check if prediction is one of our main scoring categories
+                total_score[pred] += weight
+            # Predictions for 'ตอง' from modules (if any) are ignored as we don't aggregate for 'ตอง' bets.
+
+        best_overall_prediction: Optional[SicBoOutcome] = None
+        best_source: Optional[str] = None
+        overall_confidence: Optional[int] = None
+        
+        sum_scores = sum(total_score.values())
+        if sum_scores > 0:
+            best_pred_key = max(total_score, key=total_score.get)
+            conf_val = int((total_score[best_pred_key] / sum_scores) * 100)
+            
+            if conf_val > 0:
+                best_overall_prediction = best_pred_key
+                overall_confidence = min(conf_val, 95)
+                source_modules = [name for name, pred in predictions.items() if pred == best_pred_key]
+                best_source = ", ".join(source_modules)
+
+        # Extract a relevant pattern for display in the UI.
+        # This still focuses on H/L patterns as 'ไฮโล' doesn't form patterns in the same way.
+        identified_pattern = self._extract_dominant_pattern(history)
+
+        return best_overall_prediction, best_source, overall_confidence, identified_pattern
+
+    def _extract_dominant_pattern(self, history: pd.DataFrame) -> Optional[str]:
+        """
+        Attempts to extract a visually recognizable pattern from the recent history,
+        returning a short code string that can be mapped to a user-friendly name in app.py.
+        Filters out 'ตอง' and 'ไฮโล' as they don't form H/L patterns.
+        """
+        if len(history) < 6:
+            return None
+        
+        # Filter history to only include 'สูง' or 'ต่ำ' for pattern detection. Exclude 'ตอง' and 'ไฮโล'.
+        recent_highlow_filtered = [val for val in history['HighLow'].tail(6).tolist() if val in ['สูง', 'ต่ำ']]
+        
+        if len(recent_highlow_filtered) < 4:
+            return None
+
+        pattern_str = "".join(recent_highlow_filtered)
+
+        if "สูงต่ำสูงต่ำ" in pattern_str: return "HLHL"
+        if "ต่ำสูงต่ำสูง" in pattern_str: return "LHLH"
+        if "สูงสูงต่ำต่ำ" in pattern_str: return "HHL_LL"
+        if "ต่ำต่ำสูงสูง" in pattern_str: return "LLH_HH"
+        
+        if pattern_str.endswith("สูงสูงสูง"): return "HHH"
+        if pattern_str.endswith("ต่ำต่ำต่ำ"): return "LLL"
+        
+        return None
+        # src/scorer.py
+from typing import Dict, List, Optional, Tuple
+import pandas as pd
 # *** แก้ไข: เปลี่ยน Relative Import เป็น Absolute Import ***
 from prediction_modules.base_predictor import SicBoOutcome
 
