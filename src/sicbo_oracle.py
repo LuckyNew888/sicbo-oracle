@@ -5,20 +5,20 @@ import sys
 import os
 
 # Define common types for Sic Bo outcomes
-# This type is used across modules for consistency.
 SicBoOutcome = Literal["สูง", "ต่ำ", "คู่", "คี่", "ตอง", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17"]
 
 # Import base predictor and specific prediction modules
-from .prediction_modules.base_predictor import BasePredictor
-from .prediction_modules.rule_based_predictor import RuleBasedPredictor
-from .prediction_modules.pattern_predictor import PatternPredictor
-from .prediction_modules.trend_predictor import TrendPredictor             
-from .prediction_modules.two_two_pattern_predictor import TwoTwoPatternPredictor 
-from .prediction_modules.sniper_pattern_predictor import SniperPatternPredictor 
-from .prediction_modules.smart_predictor import SmartPredictor             
+# *** แก้ไข: เปลี่ยน Relative Import เป็น Absolute Import ***
+from prediction_modules.base_predictor import BasePredictor
+from prediction_modules.rule_based_predictor import RuleBasedPredictor
+from prediction_modules.pattern_predictor import PatternPredictor
+from prediction_modules.trend_predictor import TrendPredictor             
+from prediction_modules.two_two_pattern_predictor import TwoTwoPatternPredictor 
+from prediction_modules.sniper_pattern_predictor import SniperPatternPredictor 
+from prediction_modules.smart_predictor import SmartPredictor             
 
 # Import the ConfidenceScorer
-from .scorer import ConfidenceScorer
+from scorer import ConfidenceScorer # *** แก้ไข: เปลี่ยน Relative Import เป็น Absolute Import ***
 
 class SicBoOracle:
     """
