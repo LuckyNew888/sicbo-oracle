@@ -8,7 +8,6 @@ import os
 SicBoOutcome = Literal["สูง", "ต่ำ", "คู่", "คี่", "ตอง", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17"]
 
 # Import base predictor and specific prediction modules
-# *** แก้ไข: เปลี่ยน Relative Import เป็น Absolute Import ***
 from prediction_modules.base_predictor import BasePredictor
 from prediction_modules.rule_based_predictor import RuleBasedPredictor
 from prediction_modules.pattern_predictor import PatternPredictor
@@ -18,7 +17,7 @@ from prediction_modules.sniper_pattern_predictor import SniperPatternPredictor
 from prediction_modules.smart_predictor import SmartPredictor             
 
 # Import the ConfidenceScorer
-from scorer import ConfidenceScorer # *** แก้ไข: เปลี่ยน Relative Import เป็น Absolute Import ***
+from scorer import ConfidenceScorer 
 
 class SicBoOracle:
     """
@@ -54,7 +53,8 @@ class SicBoOracle:
         # Minimum number of rolls required in history before the oracle starts making predictions.
         self.min_history_for_prediction = 5 
         # Minimum non-triplet High/Low outcomes needed before making predictions (similar to Baccarat's 20 P/B)
-        self.min_non_triplet_history_for_prediction = 20 
+        # *** แก้ไข: ลดจำนวนตาขั้นต่ำสำหรับ High/Low ที่ไม่ใช่ตอง จาก 20 เป็น 10 ***
+        self.min_non_triplet_history_for_prediction = 10 
 
     def add_roll(self, die1: int, die2: int, die3: int):
         """
@@ -221,6 +221,7 @@ class SicBoOracle:
         low_count = filtered_highlow_history.count("ต่ำ")
 
         # Baccarat-inspired "wait" condition: if not enough non-triplet history or long miss streak
+        # *** แก้ไข: ใช้ 10 ตาแทน 20 ตา สำหรับการเริ่มทำนายหลัก ***
         if (high_count + low_count) < self.min_non_triplet_history_for_prediction or current_miss_streak >= 6:
             self.last_prediction_outcome = None
             self.last_prediction_source = None
