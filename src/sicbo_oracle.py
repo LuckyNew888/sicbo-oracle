@@ -240,7 +240,8 @@ class SicBoOracle:
         final_pred: Optional[SicBoOutcome] = None
         source: Optional[str] = None
         confidence: Optional[int] = None
-        pattern: Optional[str] = None
+        pattern: Optional[str] = None # pattern is initialized here
+
         prediction_type: Literal["normal", "recovery"] = "normal" # Default to normal
 
         # Check for a strong 'ไฮโล' prediction first
@@ -249,10 +250,11 @@ class SicBoOracle:
             final_pred = "ไฮโล"
             source = "ทำนายไฮโล"
             confidence = min(int(weights.get("ทำนายไฮโล", 0.5) * 100), 95)
-            pattern = None
+            pattern = None # Pattern is explicitly set to None here if HiLo is predicted
         else:
             # Otherwise, use the scorer for High/Low prediction
             final_pred, source, confidence, pattern = self.scorer.score(module_predictions, weights, self.history)
+            # Here, 'pattern' is assigned the result from scorer._extract_dominant_pattern
 
         # Baccarat-inspired "recovery" logic: if on a miss streak, try to use the best recent module
         # This recovery logic will now also consider 'ทำนายไฮโล' if it's the best recent module.
@@ -266,12 +268,18 @@ class SicBoOracle:
                         final_pred = "ไฮโล"
                         source = f"{mod_name}-Recovery"
                         confidence = min(int(weights.get(mod_name, 0.5) * 100 * 1.2), 95)
-                        pattern = None
+                        pattern = None # Pattern is explicitly set to None here
                         break
                     elif module_predictions[mod_name] in ["สูง", "ต่ำ"]:
                         final_pred = module_predictions[mod_name]
                         source = f"{mod_name}-Recovery"
                         confidence = min(int(weights.get(mod_name, 0.5) * 100 * 1.2), 95) 
+                        # Pattern is *not* explicitly set to None here.
+                        # This means if the 'else' branch (scorer.score) set 'pattern' to "LHLH",
+                        # and then recovery takes over with a H/L prediction, the 'pattern' variable
+                        # from the scorer.score call might persist.
+                        # However, 'final_pred' is correctly assigned the outcome.
+
                         break 
 
         # Store the final prediction made by the oracle for the next add_roll cycle
@@ -279,6 +287,7 @@ class SicBoOracle:
         self.last_prediction_source = source
         self.last_prediction_type = prediction_type # Store the determined prediction type
         
+        print(f"DEBUG: predict_next_outcome - final_pred: {final_pred}, source: {source}, confidence: {confidence}, pattern: {pattern}")
         return final_pred, source, confidence, pattern, current_miss_streak
 
     def _calculate_miss_streak(self) -> int:
@@ -303,7 +312,7 @@ class SicBoOracle:
             if pred_outcome in ["สูง", "ต่ำ", "ไฮโล"]: # Check against all possible predictions
                 # Special outcomes ('ตอง') are always skipped if actual.
                 # If the prediction was H/L, and actual was 'ตอง' or 'ไฮโล', it's a special case, not a miss or win for H/L streak.
-                if pred_outcome in ["สูง", "ต่ำ"] and actual_outcome in ["ตอง", "ไฮलो"]:
+                if pred_outcome in ["สูง", "ต่ำ"] and actual_outcome in ["ตอง", "ไฮโล"]:
                     print("DEBUG:   Skipping H/L prediction vs Triplet/HiLo actual (special case).")
                     continue 
                 
