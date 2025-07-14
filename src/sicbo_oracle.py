@@ -70,7 +70,7 @@ class SicBoOracle:
         high_low = ''
         
         if total == 11:
-            high_low = 'ไฮโล' # Special case: Total 11 is 'ไฮโล'
+            high_low = 'ไฮโล' 
         elif 4 <= total <= 10:
             high_low = 'ต่ำ'
         elif 12 <= total <= 17:
@@ -216,7 +216,7 @@ class SicBoOracle:
         if len(self.history) < self.min_history_for_prediction:
             self.last_prediction_outcome = None
             self.last_prediction_source = None
-            self.last_prediction_type = "none" # Set type to none
+            self.last_prediction_type = "none" 
             return None, None, None, f"⚠️ รอข้อมูลครบ {self.min_history_for_prediction} ตา ก่อนเริ่มทำนาย", 0
 
         # Filter history for non-'ตอง' and non-'ไฮโล' High/Low outcomes for prediction readiness count
@@ -228,7 +228,7 @@ class SicBoOracle:
         if (high_count + low_count) < self.min_non_special_outcome_history_for_prediction or current_miss_streak >= 6:
             self.last_prediction_outcome = None
             self.last_prediction_source = None
-            self.last_prediction_type = "none" # Set type to none
+            self.last_prediction_type = "none" 
             return None, None, None, f"⏳ กำลังวิเคราะห์ข้อมูล หรือยังไม่พบรูปแบบที่ชัดเจน (ต้องการ สูง/ต่ำ ที่ไม่ใช่ตอง/ไฮโล อย่างน้อย {self.min_non_special_outcome_history_for_prediction} ตา)", current_miss_streak
 
         module_predictions = {}
@@ -288,27 +288,38 @@ class SicBoOracle:
         - 'normal' predictions: hit resets streak, miss increments.
         - 'recovery' predictions: hit does NOT reset streak, miss increments.
         """
+        print(f"DEBUG: _calculate_miss_streak called. Current prediction_log length: {len(self.prediction_log)}")
         streak = 0
-        for log_entry, actual_outcome in zip(reversed(self.prediction_log), reversed(self.result_log)):
+        # Iterate backwards through prediction_log and result_log simultaneously.
+        for i, (log_entry, actual_outcome) in enumerate(zip(reversed(self.prediction_log), reversed(self.result_log))):
             pred_outcome, _, prediction_type = log_entry # Unpack prediction_type
+            print(f"DEBUG: Processing round {len(self.prediction_log) - 1 - i}: Pred={pred_outcome}, Actual={actual_outcome}, Type={prediction_type}")
 
             if prediction_type == "none":
+                print("DEBUG:   Skipping 'none' prediction type.")
                 continue # Skip rounds where no prediction was made
 
             # If a prediction was made (normal or recovery)
             if pred_outcome in ["สูง", "ต่ำ", "ไฮโล"]: # Check against all possible predictions
                 # Special outcomes ('ตอง') are always skipped if actual.
                 # If the prediction was H/L, and actual was 'ตอง' or 'ไฮโล', it's a special case, not a miss or win for H/L streak.
-                if pred_outcome in ["สูง", "ต่ำ"] and actual_outcome in ["ตอง", "ไฮโล"]:
+                if pred_outcome in ["สูง", "ต่ำ"] and actual_outcome in ["ตอง", "ไฮलो"]:
+                    print("DEBUG:   Skipping H/L prediction vs Triplet/HiLo actual (special case).")
                     continue 
                 
                 if pred_outcome != actual_outcome:
                     streak += 1 # Miss: increment streak
+                    print(f"DEBUG:   Miss! Streak incremented to {streak}.")
                 else: # Hit: Check prediction type to decide if streak resets
+                    print(f"DEBUG:   Hit! Prediction Type: {prediction_type}")
                     if prediction_type == "normal":
+                        print("DEBUG:   Normal hit. Resetting streak and breaking.")
                         break # Reset streak on normal win
                     else: # prediction_type == "recovery" and it was a win
+                        print("DEBUG:   Recovery hit. Not resetting streak, continuing to look back.")
                         continue # Do not reset streak, but also do not increment. Just pass through.
-            else: # Should not happen if pred_outcome is always one of the SicBoOutcome types
+            else: # This case should ideally not be reached if pred_outcome is always one of the SicBoOutcome types
+                print(f"DEBUG:   Unexpected prediction outcome: {pred_outcome}. Skipping.")
                 continue
+        print(f"DEBUG: _calculate_miss_streak returning {streak}")
         return streak
